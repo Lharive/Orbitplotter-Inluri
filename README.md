@@ -3,4 +3,4 @@ Program to generate stable orbits for a star system with circumbinary orbits, ba
 
 [More elaboration TBD]
 
-Note that: I am not used to GitHub and so a lot of the procedure, protocol, standards, meta, and so on are things I am unaware of. So this might look strange for quite some time.
+Note that: I am new to GitHub and so a lot of the procedure, protocol, standards, meta, and so on are things I am unaware of. So this might look strange for quite some time. I will hopefully learn as I go.
