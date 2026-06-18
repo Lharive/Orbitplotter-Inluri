@@ -55,7 +55,6 @@ print("Star 2: mass =", M2, "luminosity =", L2, "maximum age =",MaxStarAge(M2,L2
 print("Maximum Age of the System",MaxSysAge)
 print("mass ratio q=", q)
 print("\n\n")
-# need to calc temperature for Section A to be over
 # Section B covers dynamic of the two stars
 
 ###############################################3 Section B: Dynamic of the Two Stars ###################################################################
