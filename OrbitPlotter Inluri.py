@@ -21,19 +21,23 @@ def MaxStarAge(mass,lumin): #returns output in Gyrs
 def density(mass,radius): #returns output in Dsol
     return mass/(radius**3) 
 
+def temperature(radius,lumin): #returns output in Kelvin
+    return 5776 * ((lumin/(radius)**2)**(0.25))
+
 def get_star(name):
     mass = float(input(f"Mass of {name} in Msol: ")) # must be in Msol
     lumin = lum(mass)
     radius = (10**0.003)*(mass**0.724) # from logR = 0.003 + 0.724log(M)
     dense = density(mass,radius)
-    return mass, lumin, radius, dense #returns in Msol, Lsol, Rsol and Dsol respectively
+    temp = temperature(radius,lumin)
+    return mass, lumin, radius, dense, temp #returns in Msol, Lsol, Rsol, Dsol, and Kelvin respectively
 
 #####################################3 Section A: Star Parameters #####################################################################
 
 print("\n-------------------------- Section A: Star Parameters --------------\n")
 
-M1, L1, R1, D1 = get_star("Star 1")
-M2, L2, R2, D2 = get_star("Star 2")
+M1, L1, R1, D1, T1 = get_star("Star 1")
+M2, L2, R2, D2, T2 = get_star("Star 2")
 System_Age = float(input("Input the age of your stars in Gyrs ")) # must be in Gyrs
 MaxSysAge = min(MaxStarAge(M1,L1),MaxStarAge(M2,L2))
 
@@ -46,12 +50,12 @@ q = min(M1,M2)/max(M1,M2) #i dont know why i computed this, but i'll just leave 
 # output section
 
 print("\n\n")
-print("Star 1: mass =", M1, "luminosity =", L1, "maximum age =",MaxStarAge(M1,L1), "radius =",R1, "density =",D1)
-print("Star 2: mass =", M2, "luminosity =", L2, "maximum age =",MaxStarAge(M2,L2), "radius =",R2, "density =",D2)
+print("Star 1: mass =", M1, "luminosity =", L1, "maximum age =",MaxStarAge(M1,L1), "radius =",R1, "density =",D1, "surface temperature =", T1)
+print("Star 2: mass =", M2, "luminosity =", L2, "maximum age =",MaxStarAge(M2,L2), "radius =",R2, "density =",D2, "surface temperature =", T2)
 print("Maximum Age of the System",MaxSysAge)
-print("mass ratio q=",q)
+print("mass ratio q=", q)
 print("\n\n")
-# need to calc density, temperature for Section A to be over
+# need to calc temperature for Section A to be over
 # Section B covers dynamic of the two stars
 
 ###############################################3 Section B: Dynamic of the Two Stars ###################################################################
