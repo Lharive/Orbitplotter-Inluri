@@ -15,4 +15,4 @@ function resample_data() {
 }
 
 /* this was the Google Script I used paired with an older version of the Lightmapper Inluri spreadsheet.*/
-/* I abandoned this line of work because (a) i do not like Javascript (b) This was overkill (c) It didn't solve the core problems */
+/* I abandoned this line of work because (a) i do not like Javascript (b) This was overkill (c) It didn't solve the core problems (d) I barely understood any of this code myself*/
