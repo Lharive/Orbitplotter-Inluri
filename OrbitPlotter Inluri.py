@@ -5,6 +5,8 @@
 
 ##############################################3 Pre-Section: Define Functions and Formulae #####################################################
 
+import numpy as np
+
 def lum(mass): #returns output in Lsol
     if mass < 0.43:
         return 0.23 * (mass)**(2.3)
@@ -50,15 +52,35 @@ q = min(M1,M2)/max(M1,M2) #i dont know why i computed this, but i'll just leave 
 # output section
 
 print("\n\n")
-print("Star 1: mass =", M1, "luminosity =", L1, "maximum age =",MaxStarAge(M1,L1), "radius =",R1, "density =",D1, "surface temperature =", T1)
-print("Star 2: mass =", M2, "luminosity =", L2, "maximum age =",MaxStarAge(M2,L2), "radius =",R2, "density =",D2, "surface temperature =", T2)
+print("Star 1: \n mass =", M1, "\n luminosity =", L1, "\n maximum age =",MaxStarAge(M1,L1), "\n radius =",R1, "\n density =",D1, "\n surface temperature =", T1)
+print("Star 2: \n mass =", M2, "\n luminosity =", L2, "\n maximum age =",MaxStarAge(M2,L2), "\n radius =",R2, "\n density =",D2, "\n surface temperature =", T2)
 print("Maximum Age of the System",MaxSysAge)
 print("mass ratio q=", q)
 print("\n\n")
+
+# note: the spreadsheet also showed surface color based on temperature. it was based on a simple piecewise function and conditional formatting. 
+# it should be doable in python right now but i think it would just distract me considering it isnt essential, just a very neat visual.
+# # maybe i'll do it once the full spreadsheet has been converted to python. 
+
 # Section B covers dynamic of the two stars
 
 ###############################################3 Section B: Dynamic of the Two Stars ###################################################################
 
 print("\n-------------------------- Section B: Dynamic of the Two Stars --------------\n")
 
+
+
+# mention assumptions
+# some interesting stuff to think about
+# 1. distribution of stable planetary counts from 50,000 Monte Carlo runs
+# 2. system with planets and resonance relationships highlighted
+# 3. habitable-zone occurrence vs binary separation
+
+
+
+# okay, research paper reference: "Eccentricities of Close Stellar Binaries by Yanqin Wu, Sam Hadden, et al. (2024), https://arxiv.org/html/2411.09905v1"
+# assumptions: Period 10^2 to 10^3 days
+# "gold sample" (check copyma bhako notes)
+
+e = np.random.rayleigh(scale=0.3, size=None)
 
