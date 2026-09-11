@@ -6,8 +6,8 @@ Program to generate stable orbits for a star system with circumbinary orbits, ba
 Note that: I am new to GitHub and so a lot of the procedure, protocol, standards, meta, and so on are things I am unaware of. So this might look strange for quite some time. I will hopefully learn as I go.
 
 # Phases:
-* **Phase I:** Basic stellar dynamics between the two binary stars, as computed under the function `generate_system()`
-* **Phase II:** Implement planetary orbits around the stellar binaries
+* **Phase I:** Basic stellar dynamics between the two binary stars, as computed under the function `generate_system()`. `Status: Done`
+* **Phase II:** Implement planetary orbits around the stellar binaries. `Status: Step 1 done`
 * **Phase III-A:** Implement Simple System Visualization
 * **Phase III-B:** Implement massification and/or visualization
 
