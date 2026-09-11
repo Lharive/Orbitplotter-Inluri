@@ -11,7 +11,7 @@ Note that: I am new to GitHub and so a lot of the procedure, protocol, standards
 * **Phase III-A:** Implement Simple System Visualization
 * **Phase III-B:** Implement massification and/or visualization
 
-**Note: **Phases III-A and III-B are not necessarily linear in implementation order (i.e. I -> II -> III-A -> III-B) and are essentially two separate paths that are neither mutually exclusive nor in any particular priority order.
+**Note:** Phases III-A and III-B are not necessarily linear in implementation order (i.e. I -> II -> III-A -> III-B) and are essentially two separate paths that are neither mutually exclusive nor in any particular priority order.
 
 # To - Do List For Now:
 
