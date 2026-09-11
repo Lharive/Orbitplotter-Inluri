@@ -6,8 +6,6 @@
 # Project scope has not changed
 
 import numpy as np 
-import random
-
 
 # Helper functions for robust analytical integration and sampling
 def integrate_power_law(gamma, low, high):
@@ -167,7 +165,6 @@ def get_ze_orbits(sy):
 if __name__ == "__main__":
     # Set seed for reproducible trial runs
     np.random.seed(42)  
-    random.seed(42)
     
     print("=" * 65)
     print("      ORBITPLOTTER INLURI: PHASE I + PHASE II STEP 1")
