@@ -7,7 +7,7 @@ Note that: I am new to GitHub and so a lot of the procedure, protocol, standards
 
 # Phases:
 * **Phase I:** Basic stellar dynamics between the two binary stars, as computed under the function `generate_system()`. `Status: Done`
-* **Phase II:** Implement planetary orbits around the stellar binaries. `Status: Step 1 done`
+* **Phase II:** Implement planetary orbits around the stellar binaries. `Status: Step 1 and Step 2done`
 * **Phase III-A:** Implement Simple System Visualization
 * **Phase III-B:** Implement massification and/or visualization
 
