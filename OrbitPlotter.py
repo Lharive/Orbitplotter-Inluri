@@ -7,6 +7,26 @@
 
 import numpy as np 
 
+############################ CONSTANTS AND PARAMETERS: THE COMPENDIUM ####################################
+
+EARTH_YEAR_DAYS = 365.2525
+M1_MIN, M1_MAX = 0.8, 1.2                # valid primary-mass range, Moe & Di Stefano (2017)
+LOGP_MEAN, LOGP_STD = 5.0, 2.3           # Raghavan et al. (2010) solar-type period distribution
+LOGP_MIN, LOGP_MAX = 0.2, 3.0            # close-binary regime where Rayleigh e-model is valid, Wu et al. (2024)
+LOGP_CIRCULAR = 1.0                      # below this, tidal circularization : e = 0
+GAMMA_SMALL, GAMMA_LARGE = 0.3, -0.5     # Moe & Di Stefano (2017) Eq. 13, Eq. 9
+Q_SMALL_LO, Q_SMALL_HI = 0.1, 0.3
+Q_LARGE_LO, Q_LARGE_HI = 0.3, 1.0
+Q_TWIN_LO, Q_TWIN_HI = 0.95, 1.0
+RAYLEIGH_STAR_SCALE = 0.3
+M_EARTH_TO_MSUN = 3.0037e-6
+MIN_MASS, MAX_MASS = 0.5, 50 # in M_earth, also note that Dietrich et. al. (2024) actually had their masses randomly chosen for each planet with a uniform prior in log mass between one-third Earth mass and 3 Jupiter masses. This one is far narrower.
+KAPPA = 500.0 # Concentration parameter for p=3 von Mises-Fisher distribution , from Li et al. (2018) 
+PLANET_MIN_ECCENTRICITY, PLANET_MAX_ECCENTRICITY = 0.01, 0.07 # He et al. (2020) and Dietrich et al. (2024) describe the range of planet eccentricities as [0.01,0.07]
+RAYLEIGH_PLANET_SCALE = 0.025 # Rayleigh distribution with scale = 0.025 (He et al. (2020); Dietrich et al. (2024)) is fair for planet eccentricity (in line with the [0.01,0.07] range described by He et al. (2020) and Dietrich et al. (2024))
+
+###########################################################################################################
+
 # Helper functions for robust analytical integration and sampling
 def integrate_power_law(gamma, low, high):
     if np.isclose(gamma, -1.0): # is it near -1?
@@ -18,25 +38,19 @@ def sample_power_law(gamma, low, high, w):
         return low * (high / low)**w
     return (low**(gamma + 1.0) + w * (high**(gamma + 1.0) - low**(gamma + 1.0)))**(1.0 / (gamma + 1.0))
 
+def sample_fisher_inclination():
+
+    U = np.random.uniform(0, 1)
+    del_i = np.arccos(1+(np.log(U))/KAPPA)
+
+    return del_i
+
 def mass_to_radius(M):
     if M >= 1.0:
         return M**1.0
     else:
         return M**0.8
 
-############################ CONSTANTS AND PARAMETERS: THE COMPENDIUM ####################################
-
-M1_MIN, M1_MAX = 0.8, 1.2                # valid primary-mass range, Moe & Di Stefano (2017)
-LOGP_MEAN, LOGP_STD = 5.0, 2.3           # Raghavan et al. (2010) solar-type period distribution
-LOGP_MIN, LOGP_MAX = 0.2, 3.0            # close-binary regime where Rayleigh e-model is valid, Wu et al. (2024)
-LOGP_CIRCULAR = 1.0                      # below this, tidal circularization : e = 0
-GAMMA_SMALL, GAMMA_LARGE = 0.3, -0.5     # Moe & Di Stefano (2017) Eq. 13, Eq. 9
-Q_SMALL_LO, Q_SMALL_HI = 0.1, 0.3
-Q_LARGE_LO, Q_LARGE_HI = 0.3, 1.0
-Q_TWIN_LO, Q_TWIN_HI = 0.95, 1.0
-RAYLEIGH_SCALE = 0.3
-
-###########################################################################################################
 
 def generate_system(M1):
     if not (M1_MIN <= M1 <= M1_MAX):
@@ -90,12 +104,17 @@ def generate_system(M1):
     P = 10**logP # this is the period of the binary system in days, which is now defined by the logP variable
     e_max = 1.0 - (P/2.0)**(-2.0/3.0) # Moe & Di Stefano (2017), Section 2, Equation (3)
 
+    if e_max > 0.8:
+        max_permissible_eccentricity = 0.8 # for the Holman and Weigert (1999) Empirical Polynomial, the range is determined for [0, 0.7-0.8], so we need to limit the maximum eccentricity to 0.8 for the polynomial to be valid
+    else:
+        max_permissible_eccentricity = e_max 
+
     if logP < LOGP_CIRCULAR:
         e = 0.0  
     else:
-        e = np.random.rayleigh(scale=RAYLEIGH_SCALE, size=None) # Rayleigh Distribution is the distribution for binary stars within the above fixed period bounds, Wu et al. (2024)
-        while not 0.0 < e < e_max:
-            e = np.random.rayleigh(scale=RAYLEIGH_SCALE, size=None)  
+        e = np.random.rayleigh(scale=RAYLEIGH_STAR_SCALE, size=None) # Rayleigh Distribution is the distribution for binary stars within the above fixed period bounds, Wu et al. (2024)
+        while not 0.0 < e < max_permissible_eccentricity:
+            e = np.random.rayleigh(scale=RAYLEIGH_STAR_SCALE, size=None)  
 
     return {
         "M1": M1, "M2": M2, "q": q,
@@ -120,7 +139,7 @@ def get_ze_orbits(sy):
         
     Returns:
     --------
-    anchor : dict
+    orbits : dict
         - M_bin  : Total binary mass (M_sun)
         - mu_bin : Binary mass ratio parameter M2 / (M1 + M2)
         - a_bin  : Binary semi-major axis (AU)
@@ -139,15 +158,11 @@ def get_ze_orbits(sy):
     mu_bin = M2 /M_bin
 
     # Kepler's Third Law to calculate semi-major axis 'a' in Astronomical Units (AU)
-    P_yr = P / 365.2525
+    P_yr = P / EARTH_YEAR_DAYS  # convert period from days to years
     a_bin = (M_bin * (P_yr**2))**(1.0 / 3.0)
 
     # a_crit = a_bin * ratio
-
     # from Holman and Wiegert (1999) a_c = 1.60 + 5.10*e - 2.22*e^2 + 4.12*mu -4.27*e*mu - 5.09 mu^2 + 4.61 e^2 mu^2
-
-
-
     ratio = 1.60 + 5.10*e_bin - 2.22*e_bin**2 + 4.12*mu_bin - 4.27*e_bin*mu_bin - 5.09*mu_bin**2 + 4.61*e_bin**2 * mu_bin**2
 
     # Physical critical semi-major axis
@@ -162,12 +177,43 @@ def get_ze_orbits(sy):
         'ratio': ratio
     }
 
+
+def exofirst(orb,MIN_MASS,MAX_MASS):
+
+    log_m1 = np.random.uniform(np.log10(MIN_MASS), np.log10(MAX_MASS)) # from Dietrich et al. (2024)
+    m1_earth = 10**log_m1
+
+    m1_solar = m1_earth * M_EARTH_TO_MSUN
+
+    pileup_factor = np.random.uniform(1.09, 1.46) # from Welsh et al. (2014)
+    a_1 = orb['a_crit'] * pileup_factor # because a_1 ~ factor * a_crit
+
+    M_bin = orb['M_bin']
+    P_yr_1 = np.sqrt((a_1**3) / (M_bin + m1_solar))
+    P_days_1 = P_yr_1 * EARTH_YEAR_DAYS
+
+    planet1_inclination = sample_fisher_inclination() # Li et al. (2018) 
+
+    e_1 = np.random.rayleigh(scale=RAYLEIGH_PLANET_SCALE)
+    while not (PLANET_MIN_ECCENTRICITY < e_1 < PLANET_MAX_ECCENTRICITY):
+        e_1 = np.random.rayleigh(scale=RAYLEIGH_PLANET_SCALE)
+
+    return {
+        'm1_earth': m1_earth,
+        'm1_solar': m1_solar,
+        'a_1': a_1,
+        'P_days_1': P_days_1,
+        'inclination': planet1_inclination,
+        'e_1': e_1
+    }
+
+
 if __name__ == "__main__":
     # Set seed for reproducible trial runs
     np.random.seed(42)  
     
     print("=" * 65)
-    print("      ORBITPLOTTER INLURI: PHASE I + PHASE II STEP 1")
+    print("      ORBITPLOTTER INLURI: PHASE I COMPLETE + PHASE II STEP 1 AND STEP 2 COMPLETE")
     print("=" * 65)
     
     n=int(input("Enter the number of systems to generate: "))
@@ -182,8 +228,10 @@ if __name__ == "__main__":
         else:
             print(f"\nGenerated random primary mass for SYSTEM #{i+1} from the range between {M1_MIN} and {M1_MAX} M_sol !!")
             M1 = np.random.uniform(M1_MIN, M1_MAX)
+
         sy = generate_system(M1)
         orb = get_ze_orbits(sy)
+        exoplanet1data = exofirst(orb, MIN_MASS, MAX_MASS)
 
         print(f"\n--- SYSTEM #{i+1} ---")
         print(f"Primary Mass (M1)      : {sy['M1']:.3f} M_sol")
@@ -191,10 +239,15 @@ if __name__ == "__main__":
         print(f"Binary Period (P)      : {sy['P']:.2f} days (logP = {sy['logP']:.3f})")
         print(f"Binary Eccentricity (e): {sy['e']:.3f}")
         print(f"Total Binary Mass      : {orb['M_bin']:.3f} M_sol")
-        print(f"Mass Ratio Param (mu)  : {orb['mu_bin']:.3f}")
+        print(f"Mass Ratio Parameter (mu)  : {orb['mu_bin']:.3f}")
         print(f"Binary Separation (a)  : {orb['a_bin']:.4f} AU")
         print(f"Holman Ratio (a_c/a_b) : {orb['ratio']:.3f}")
         print(f"Critical Stability (a_c): {orb['a_crit']:.4f} AU")
+        print(f"Exoplanet 1 Mass       : {exoplanet1data['m1_earth']:.3f} M_earth ({exoplanet1data['m1_solar']:.6f} M_sol)")
+        print(f"Exoplanet 1 Semi-Major Axis (a_1): {exoplanet1data['a_1']:.4f} AU")
+        print(f"Exoplanet 1 Period (P_1): {exoplanet1data['P_days_1']:.2f} days")
+        print(f"Exoplanet 1 Inclination : {np.degrees(exoplanet1data['inclination']):.3f} degrees")
+        print(f"Exoplanet 1 Eccentricity: {exoplanet1data['e_1']:.3f}")
         print(f"\n ----------------------------------------------\n")
         
     print("\n" + "=" * 65)
