@@ -6,6 +6,9 @@
 # Project scope has not changed
 
 import numpy as np 
+import pandas as pd
+import os
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 ############################ CONSTANTS AND PARAMETERS: THE COMPENDIUM ####################################
 
@@ -24,6 +27,9 @@ MIN_MASS, MAX_MASS = 0.5, 50 # in M_earth, also note that Dietrich et. al. (2024
 KAPPA = 500.0 # Concentration parameter for p=3 von Mises-Fisher distribution , from Li et al. (2018) 
 PLANET_MIN_ECCENTRICITY, PLANET_MAX_ECCENTRICITY = 0.01, 0.07 # He et al. (2020) and Dietrich et al. (2024) describe the range of planet eccentricities as [0.01,0.07]
 RAYLEIGH_PLANET_SCALE = 0.025 # Rayleigh distribution with scale = 0.025 (He et al. (2020); Dietrich et al. (2024)) is fair for planet eccentricity (in line with the [0.01,0.07] range described by He et al. (2020) and Dietrich et al. (2024))
+MU_LOGNORMAL_DELTA = 3.14 # from Dietrich et al. (2024) for Nominal Kepler Analog Sets
+SIGMA_LOGNORMAL_DELTA = 0.76 # from Dietrich et al. (2024) for Nominal Kepler Analog Sets
+MIN_DELTA_HILL = 2 * np.sqrt(3)  # the theoretical minimum value of delta for Hill stability (taken from Dietrich et al. (2024) who in turn cite Birn (1973), Gladman (1993), and Tremaine (2023)) 
 
 ###########################################################################################################
 
@@ -207,18 +213,162 @@ def exofirst(orb,MIN_MASS,MAX_MASS):
         'e_1': e_1
     }
 
+def planetmaker(orb,exoplanet1data, planetnum):
+
+    # R_H = (a1+a2)/2 * [(m_p1+m_p2)/(3(M1+M2))]^(1/3)], from Li et al. (2018), Equation 26 -> mutual Hill Radius, adapted for Circumstellars
+    # Delta = 2(a_2(1-e_2) - a_1(1+e_1)) / (R_H), from Dietrich et al. (2024) 
+    # Assumption that Dietrich et al. (2024) definition of Delta holds even for Circumstellars
+
+    # need planet 1 data
+
+    planets = [exoplanet1data]
+
+    # Generate Planets 2 through planetnum
+    for p_idx in range(2, planetnum + 1):
+        prev_planet = planets[-1]
+
+        # Extract previous planet parameters
+        a_prev = prev_planet.get('a_1', prev_planet.get('a'))
+        e_prev = prev_planet.get('e_1', prev_planet.get('e'))
+        m_prev_solar = prev_planet.get('m1_solar', prev_planet.get('m_solar'))
+
+        # Sample planet mass log-uniformly in [MIN_MASS, MAX_MASS] Earth masses
+        log_m_i = np.random.uniform(np.log10(MIN_MASS), np.log10(MAX_MASS))
+        m_i_earth = 10**log_m_i
+        m_i_solar = m_i_earth * M_EARTH_TO_MSUN
+
+        # Calculate mutual mass ratio mu_m (Li et al. 2018, Eq. 26)
+        mu_m = ((m_prev_solar + m_i_solar) / (3.0 * orb['M_bin'])) ** (1.0 / 3.0)
+
+
+        # Sample eccentricity from Rayleigh(0.025) bounded in [0.01, 0.07]
+        e_i = np.random.rayleigh(scale=RAYLEIGH_PLANET_SCALE)
+        while not (PLANET_MIN_ECCENTRICITY < e_i < PLANET_MAX_ECCENTRICITY):
+            e_i = np.random.rayleigh(scale=RAYLEIGH_PLANET_SCALE)
+
+        # Sample mutual Hill spacing Delta ~ Log-Normal(3.14, 0.76) with Delta >= 8.0
+        delta_ceiling = 2.0 * (1.0 - e_i) / mu_m  # if delta exceeds this, we're going to get negative values for a_i
+        delta_i = np.random.lognormal(mean=MU_LOGNORMAL_DELTA, sigma=SIGMA_LOGNORMAL_DELTA)
+        while not (MIN_DELTA_HILL <= delta_i < delta_ceiling):
+            delta_i = np.random.lognormal(mean=MU_LOGNORMAL_DELTA, sigma=SIGMA_LOGNORMAL_DELTA)
+
+
+        # Solve for outer semi-major axis a_i using exact eccentricity-dependent formula (Dietrich, Malhotra, & Apai 2024, Eq. 1)
+        num = 2* (1.0 + e_prev) + (delta_i * mu_m )
+        den = 2* (1.0 - e_i) - (delta_i * mu_m)
+        a_i = a_prev * (num / den)
+
+        # Compute orbital period in days via Kepler's 3rd Law
+        P_i_days = np.sqrt(a_i**3 / (orb['M_bin'] + m_i_solar)) * EARTH_YEAR_DAYS
+
+        # Sample mutual inclination delta_i (von Mises-Fisher, KAPPA = 500.0)
+        incl_i = sample_fisher_inclination()
+
+        # Store planet dictionary
+        planet_data = {
+            'planet_index': p_idx,
+            'm_earth': m_i_earth,
+            'm_solar': m_i_solar,
+            'a': a_i,
+            'P_days': P_i_days,
+            'e': e_i,
+            'inclination': incl_i,
+            'delta_hill': delta_i
+        }
+        planets.append(planet_data)
+
+    return planets
+
+def export_system_data(binary_data, planets_list, output_mode, filename_prefix):
+    """
+    Exports system data to the terminal, a CSV/Excel spreadsheet, or both.
+    
+    Parameters:
+        binary_data (dict): Binary star & stability parameters (M1, M2, a_bin, e_bin, a_crit, etc.).
+        planets_list (list of dict): List of planet dictionaries from planetmaker().
+        output_mode (str): 'terminal', 'csv', 'excel', or 'both'.
+        filename_prefix (str): Base filename for exported spreadsheets.
+    """
+    df_planets = pd.DataFrame(planets_list)
+
+    # Clean up and select display/export columns
+    export_cols = ['planet_index', 'a', 'P_days', 'm_earth', 'e', 'inclination', 'delta_hill']
+    col_names = {
+        'planet_index': 'Planet_ID',
+        'a': 'SemiMajorAxis_AU',
+        'P_days': 'Period_Days',
+        'm_earth': 'Mass_Mearth',
+        'e': 'Eccentricity',
+        'inclination': 'Inclination_deg',
+        'delta_hill': 'Hill_Spacing_Delta'
+    }
+    df_export = df_planets[[c for c in export_cols if c in df_planets.columns]].rename(columns=col_names)
+    
+    # --- 1. TERMINAL OUTPUT ---
+    if output_mode in ['terminal', 'both']:
+        print("\n" + "="*70)
+        print("          CIRCUMBINARY STAR SYSTEM & PLANETARY ARCHITECTURE         ")
+        print("="*70)
+        print(f"Primary Star Mass (M1)   : {binary_data['M1']:.2f} M_sun")
+        print(f"Secondary Star Mass (M2) : {binary_data['M2']:.2f} M_sun")
+        print(f"Binary Separation (a_bin): {binary_data['a_bin']:.4f} AU")
+        print(f"Binary Period (P_bin)    : {binary_data['P_bin_days']:.2f} days")
+        print(f"Binary Eccentricity      : {binary_data['e_bin']:.4f}")
+        print(f"Critical Stability (a_crit): {binary_data['a_crit']:.4f} AU (Holman & Wiegert 1999)")
+        print("-" * 70)
+        print(df_export.to_string(index=False, float_format=lambda x: f"{x:8.4f}"))
+        print("="*70 + "\n")
+
+    # --- 2. SPREADSHEET OUTPUT (CSV) ---
+    if output_mode in ['csv', 'both']:
+        csv_filename = os.path.join(SCRIPT_DIR, f"{filename_prefix}.csv")
+        df_export.to_csv(csv_filename, index=False)
+        print(f"✓ Planet data successfully exported to CSV spreadsheet: {csv_filename}")
+
+    # --- 3. SPREADSHEET OUTPUT (Excel with Multi-Tab Metadata) ---
+    if output_mode in ['excel', 'both']:
+        excel_filename = os.path.join(SCRIPT_DIR, f"{filename_prefix}.xlsx")
+        with pd.ExcelWriter(excel_filename, engine='openpyxl') as writer:
+            # Tab 1: Central Binary & System Metadata
+            df_binary = pd.DataFrame([binary_data])
+            df_binary.to_excel(writer, sheet_name='Binary_Stars', index=False)
+            
+            # Tab 2: Full Planet System Architecture
+            df_export.to_excel(writer, sheet_name='Planets', index=False)
+            
+        print(f"✓ Multi-tab system spreadsheet exported to Excel: {excel_filename}")
+
 
 if __name__ == "__main__":
     # Set seed for reproducible trial runs
-    np.random.seed(42)  
-    
+   
     print("=" * 65)
-    print("      ORBITPLOTTER INLURI: PHASE I COMPLETE + PHASE II STEP 1 AND STEP 2 COMPLETE")
+    print("      ORBITPLOTTER INLURI: PHASE I, II, & INTERESTING SIDE-TANGENT; COMPLETE        ")
     print("=" * 65)
-    
-    n=int(input("Enter the number of systems to generate: "))
 
-    choose = input("Do you want to input your own primary masses? (y/n): ").strip().lower()
+    print("\nWelcome to OrbitPlotter Inluri !!!! This program generates circumbinary star systems and their planetary architectures !!!\n")
+    
+    many_or_one = input("\nDo you have a custom number of systems to generate or are you okay with one? (yes, many = y | no, one is fine thank you =n ) ").strip().lower()
+    if many_or_one == 'y':
+        n = int(input("Enter the number of systems to generate: "))
+    else:
+        n = 1
+
+    are_you_hungry_for_planets = input("\nDo you want to generate a custom number of planets, or are you fine with 10?  Note that all generated systems will have the same number of input planets. (i want my own number!! = y | ten is good, thanks = n): ").strip().lower()
+    if are_you_hungry_for_planets == 'y':
+        planetnum = int(input("Enter number of planets for the systems to have: "))
+    else:
+        planetnum = 10  # Default number of planets
+
+    choose = input("\nDo you want to input your own primary masses? (y/n): ").strip().lower()
+    choose_seed = input("Do you want to set a seed? (all generated systems will draw from the same seed) (y/n): ").strip().lower()
+    if choose_seed == 'y':
+        num_for_seed = int(input("Enter an integer seed value: "))
+    else:
+        num_for_seed = np.random.randint(1, 1000)
+        print(f"\nRandom seed generated is: {num_for_seed}")
+
+    np.random.seed(num_for_seed)  
 
     for i in range(0, n):
         if choose == 'y':
@@ -232,22 +382,29 @@ if __name__ == "__main__":
         sy = generate_system(M1)
         orb = get_ze_orbits(sy)
         exoplanet1data = exofirst(orb, MIN_MASS, MAX_MASS)
+        exoplanet1data_normalized = {
+            'planet_index': 1,
+            'm_earth': exoplanet1data['m1_earth'],
+            'm_solar': exoplanet1data['m1_solar'],
+            'a': exoplanet1data['a_1'],
+            'P_days': exoplanet1data['P_days_1'],
+            'e': exoplanet1data['e_1'],
+            'inclination': exoplanet1data['inclination'],
+            'delta_hill': None,  # planet 1 doesn't have a Hill-spacing value as it is anchored to a_crit instead
+        }
+        system_planets = [exoplanet1data_normalized] + planetmaker(orb, exoplanet1data, planetnum)[1:]
+        binary_data = {**sy, **orb, 'P_bin_days': sy['P'], 'e_bin': sy['e']}
 
-        print(f"\n--- SYSTEM #{i+1} ---")
-        print(f"Primary Mass (M1)      : {sy['M1']:.3f} M_sol")
-        print(f"Secondary Mass (M2)    : {sy['M2']:.3f} M_sol (q = {sy['q']:.3f})")
-        print(f"Binary Period (P)      : {sy['P']:.2f} days (logP = {sy['logP']:.3f})")
-        print(f"Binary Eccentricity (e): {sy['e']:.3f}")
-        print(f"Total Binary Mass      : {orb['M_bin']:.3f} M_sol")
-        print(f"Mass Ratio Parameter (mu)  : {orb['mu_bin']:.3f}")
-        print(f"Binary Separation (a)  : {orb['a_bin']:.4f} AU")
-        print(f"Holman Ratio (a_c/a_b) : {orb['ratio']:.3f}")
-        print(f"Critical Stability (a_c): {orb['a_crit']:.4f} AU")
-        print(f"Exoplanet 1 Mass       : {exoplanet1data['m1_earth']:.3f} M_earth ({exoplanet1data['m1_solar']:.6f} M_sol)")
-        print(f"Exoplanet 1 Semi-Major Axis (a_1): {exoplanet1data['a_1']:.4f} AU")
-        print(f"Exoplanet 1 Period (P_1): {exoplanet1data['P_days_1']:.2f} days")
-        print(f"Exoplanet 1 Inclination : {np.degrees(exoplanet1data['inclination']):.3f} degrees")
-        print(f"Exoplanet 1 Eccentricity: {exoplanet1data['e_1']:.3f}")
-        print(f"\n ----------------------------------------------\n")
-        
-    print("\n" + "=" * 65)
+            # Prompt user for output preference
+        print("\nSelect Output Preference:")
+        print("  [1] Terminal Output Only")
+        print("  [2] CSV Spreadsheet Only")
+        print("  [3] Excel Workbook (.xlsx) with Binary & Planet Tabs")
+        print("  [4] All Of The Above")
+
+        choice = input("Enter option (1-4): ").strip()
+    
+        mode_map = {'1': 'terminal', '2': 'csv', '3': 'excel', '4': 'both'}
+        selected_mode = mode_map.get(choice, 'both')
+    
+        export_system_data(binary_data, system_planets, output_mode=selected_mode, filename_prefix=f'circumbinary_system_{i+1}')
