@@ -7,14 +7,16 @@ Note that: I am new to GitHub and so a lot of the procedure, protocol, standards
 
 # Phases:
 * **Phase I:** Basic stellar dynamics between the two binary stars, as computed under the function `generate_system()`. `Status: Done`
-* **Phase II:** Implement planetary orbits around the stellar binaries. `Status: Step 1 and Step 2done`
+* **Phase II:** Implement planetary orbits around the stellar binaries. `Status: Done`
 * **Phase III-A:** Implement Simple System Visualization
 * **Phase III-B:** Implement massification and/or visualization
 
-**Note:** Phases III-A and III-B are not necessarily linear in implementation order (i.e. I -> II -> III-A -> III-B) and are essentially two separate paths that are neither mutually exclusive nor in any particular priority order.
+**Note 1:** Phases III-A and III-B are not necessarily linear in implementation order (i.e. I -> II -> III-A -> III-B) and are essentially two separate paths that are neither mutually exclusive nor in any particular priority order.
+
+**Note 2:** The excel and `.csv` output were implemented independently of the documented phases as a tangential change to make it easier to work with the generated data.
+
 
 # To - Do List For Now:
 
 * Concretely Bound the Scope
-* Finish Phase II
-* Start writing about the limitations of the program
+* Continue writing about the limitations of the program
