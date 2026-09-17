@@ -14,6 +14,6 @@
 
 7. Limits have not been placed on the outermost orbit of a planet from the star, or on the upper bound of the total mass of all the bodies in the Solar System. Resultantly, this program is extremely inaccurate for very high numbers of planets,
 
-8. The minimum _theoretical_ value of delta is used as the lower limit, which can broaden the truncated distribution from where delta is sampled.
+8. The minimum _theoretical_ value of Δ: Δ_min, is used as the lower limit, which can broaden the truncated distribution from where Δ_min is sampled.
 
 9. Planet masses are treated as independent of each other and as independent of the distance from the binaries they orbit.
