@@ -24,7 +24,7 @@ Note that: I am new to GitHub and so a lot of the procedure, protocol, standards
 - **Binary eccentricity ceiling vs. period** (`e_max = 1 - (P/2)^(-2/3)`).
 
 ### Raghavan et al. (2010): *"A Survey of Stellar Families: Multiplicity of Solar-Type Stars"* (ApJS, 190, 1)
-- **Binary period distribution**: log-normal in log₁₀(P/days) with μ = 5.03, σ = 2.28 (`LOGP_MEAN, LOGP_STD = 5.0, 2.3` — rounded).
+- **Binary period distribution**: log-normal in log₁₀(P/days) with μ = 5.03, σ = 2.28 (`LOGP_MEAN, LOGP_STD = 5.0, 2.3`: rounded).
 - **Tidal circularization boundary**: this paper reports solar-type binaries circularize below ~12 days
 
 ### Wu et al. (2024): *"Eccentricities of Close Stellar Binaries"* (ApJL, 982, L34)
