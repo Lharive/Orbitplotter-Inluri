@@ -105,9 +105,9 @@ def generate_system(M1):
             W = (V - P_small_cond) / (1.0 - P_small_cond)
             q = sample_power_law(GAMMA_LARGE, Q_LARGE_LO, Q_LARGE_HI, W)
 
-    M2 = q* M1 # this is the mass of the secondary star, which is now defined by the mass ratio q and the primary mass M1
-
-    P = 10**logP # this is the period of the binary system in days, which is now defined by the logP variable
+    M2 = q* M1 
+    
+    P = 10**logP 
     e_max = 1.0 - (P/2.0)**(-2.0/3.0) # Moe & Di Stefano (2017), Section 2, Equation (3)
 
     if e_max > 0.8:
@@ -247,13 +247,13 @@ def planetmaker(orb,exoplanet1data, planetnum):
             e_i = np.random.rayleigh(scale=RAYLEIGH_PLANET_SCALE)
 
         # Sample mutual Hill spacing Delta ~ Log-Normal(3.14, 0.76) with Delta >= 8.0
-        delta_ceiling = 2.0 * (1.0 - e_i) / mu_m  # if delta exceeds this, we're going to get negative values for a_i
+        delta_ceiling = 2.0 * (1.0 - e_i) / mu_m  # if delta exceeds this, we're gonna get negative values for a_i
         delta_i = np.random.lognormal(mean=MU_LOGNORMAL_DELTA, sigma=SIGMA_LOGNORMAL_DELTA)
         while not (MIN_DELTA_HILL <= delta_i < delta_ceiling):
             delta_i = np.random.lognormal(mean=MU_LOGNORMAL_DELTA, sigma=SIGMA_LOGNORMAL_DELTA)
 
 
-        # Solve for outer semi-major axis a_i using exact eccentricity-dependent formula (Dietrich, Malhotra, & Apai 2024, Eq. 1)
+        # Solve for outer semi-major axis a_i using exact e-dependent formula (Dietrich, Malhotra, & Apai 2024, Eq. 1)
         num = 2* (1.0 + e_prev) + (delta_i * mu_m )
         den = 2* (1.0 - e_i) - (delta_i * mu_m)
         a_i = a_prev * (num / den)
