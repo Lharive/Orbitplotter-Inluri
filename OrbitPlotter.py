@@ -299,7 +299,7 @@ def export_system_data(binary_data, planets_list, output_mode, filename_prefix):
         'P_days': 'Period_Days',
         'm_earth': 'Mass_Mearth',
         'e': 'Eccentricity',
-        'inclination': 'Inclination_deg',
+        'inclination': 'Inclination_rad',
         'delta_hill': 'Hill_Spacing_Delta'
     }
     df_export = df_planets[[c for c in export_cols if c in df_planets.columns]].rename(columns=col_names)
