@@ -48,7 +48,7 @@ Note that: I am new to GitHub and so a lot of the procedure, protocol, standards
 - **Planet inclination sampling** (`sample_fisher_inclination()`, `KAPPA = 500.0`): used for the first planet's tilt relative to the binary plane.
 - **Mutual Hill radius formula** (their Eq. 26), adapted for the circumbinary/circumstellar case.
 
-### Welsh et al. (2012): *"Recent Kepler Results On Circumbinary Planets "* (Proceedings of the International Astronomical Union 8(S293):125-132)
+### Welsh et al. (2013): *"Recent Kepler Results On Circumbinary Planets "* (Proceedings of the International Astronomical Union 8(S293):125-132)
 - **Pileup factor**: circumbinary planets' semi-major axes cluster at 1.09–1.46× the critical stability radius (`pileup_factor = np.random.uniform(1.09, 1.46)` in `exofirst()`).
 
 ### Non-scientific credit
