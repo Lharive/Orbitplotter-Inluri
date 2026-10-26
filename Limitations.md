@@ -16,4 +16,6 @@
 
 8. The minimum _theoretical_ value of Δ: Δ_min, is used as the lower limit, which can broaden the truncated distribution from where Δ_min is sampled.
 
-9. Planet masses are treated as independent of each other and as independent of the distance from the binaries they orbit.
+9. Planet masses are treated as independent of each other and as independent of the distance from the binaries they orbit,
+
+10. The program does not integrate the consideration of time and how the system(s) evolve over time.
