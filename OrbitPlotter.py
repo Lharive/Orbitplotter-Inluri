@@ -24,7 +24,7 @@ Q_TWIN_LO, Q_TWIN_HI = 0.95, 1.0
 RAYLEIGH_STAR_SCALE = 0.3
 M_EARTH_TO_MSUN = 3.0037e-6
 MIN_MASS, MAX_MASS = 0.5, 50 # in M_earth, also note that Dietrich et. al. (2024) actually had their masses randomly chosen for each planet with a uniform prior in log mass between one-third Earth mass and 3 Jupiter masses. This one is far narrower.
-KAPPA = 500.0 # Concentration parameter for p=3 von Mises-Fisher distribution , from Li et al. (2018) 
+KAPPA = 500.0 # Concentration parameter for p=3 von Mises-Fisher distribution , from Li et al. (2016) 
 PLANET_MIN_ECCENTRICITY, PLANET_MAX_ECCENTRICITY = 0.01, 0.07 # He et al. (2020) and Dietrich et al. (2024) describe the range of planet eccentricities as [0.01,0.07]
 RAYLEIGH_PLANET_SCALE = 0.025 # Rayleigh distribution with scale = 0.025 (He et al. (2020); Dietrich et al. (2024)) is fair for planet eccentricity (in line with the [0.01,0.07] range described by He et al. (2020) and Dietrich et al. (2024))
 MU_LOGNORMAL_DELTA = 3.14 # from Dietrich et al. (2024) for Nominal Kepler Analog Sets
@@ -198,7 +198,7 @@ def exofirst(orb,MIN_MASS,MAX_MASS):
     P_yr_1 = np.sqrt((a_1**3) / (M_bin + m1_solar))
     P_days_1 = P_yr_1 * EARTH_YEAR_DAYS
 
-    planet1_inclination = sample_fisher_inclination() # Li et al. (2018) 
+    planet1_inclination = sample_fisher_inclination() # Li et al. (2016) 
 
     e_1 = np.random.rayleigh(scale=RAYLEIGH_PLANET_SCALE)
     while not (PLANET_MIN_ECCENTRICITY < e_1 < PLANET_MAX_ECCENTRICITY):
@@ -215,7 +215,7 @@ def exofirst(orb,MIN_MASS,MAX_MASS):
 
 def planetmaker(orb,exoplanet1data, planetnum):
 
-    # R_H = (a1+a2)/2 * [(m_p1+m_p2)/(3(M1+M2))]^(1/3)], from Li et al. (2018), Equation 26 -> mutual Hill Radius, adapted for Circumstellars
+    # R_H = (a1+a2)/2 * [(m_p1+m_p2)/(3(M1+M2))]^(1/3)], from Li et al. (2016), Equation 26 -> mutual Hill Radius, adapted for Circumstellars
     # Delta = 2(a_2(1-e_2) - a_1(1+e_1)) / (R_H), from Dietrich et al. (2024) 
     # Assumption that Dietrich et al. (2024) definition of Delta holds even for Circumstellars
 
@@ -237,7 +237,7 @@ def planetmaker(orb,exoplanet1data, planetnum):
         m_i_earth = 10**log_m_i
         m_i_solar = m_i_earth * M_EARTH_TO_MSUN
 
-        # Calculate mutual mass ratio mu_m (Li et al. 2018, Eq. 26)
+        # Calculate mutual mass ratio mu_m (Li et al. 2016, Eq. 26)
         mu_m = ((m_prev_solar + m_i_solar) / (3.0 * orb['M_bin'])) ** (1.0 / 3.0)
 
 
