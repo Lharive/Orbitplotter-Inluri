@@ -261,7 +261,7 @@ def planetmaker(orb,exoplanet1data, planetnum):
         # Compute orbital period in days via Kepler's 3rd Law
         P_i_days = np.sqrt(a_i**3 / (orb['M_bin'] + m_i_solar)) * EARTH_YEAR_DAYS
 
-        # Sample mutual inclination delta_i (von Mises-Fisher, KAPPA = 500.0)
+        # Sample mutual inclination delta_i (von Mises-Fisher, KAPPA = 500.0). inclination ist wrt binary orbitplane
         incl_i = sample_fisher_inclination()
 
         # Store planet dictionary
