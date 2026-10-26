@@ -191,7 +191,7 @@ def exofirst(orb,MIN_MASS,MAX_MASS):
 
     m1_solar = m1_earth * M_EARTH_TO_MSUN
 
-    pileup_factor = np.random.uniform(1.09, 1.46) # from Welsh et al. (2014)
+    pileup_factor = np.random.uniform(1.09, 1.46) # from Welsh et al. (2013)
     a_1 = orb['a_crit'] * pileup_factor # because a_1 ~ factor * a_crit
 
     M_bin = orb['M_bin']
